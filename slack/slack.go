@@ -19,6 +19,7 @@ import (
 */
 const helpMessage = "type in '@BOT_NAME <command_arg_1> to get a random gif of that query, prefix your query with specific if you want the first result'"
 
+// Struct for taking in image data from GIPHY
 type ImageData struct {
 	URL    string `json:"url"`
 	Width  string `json:"width"`
@@ -26,6 +27,8 @@ type ImageData struct {
 	Size   string `json:"size"`
 	Frames string `json:"frames"`
 }
+
+// Struct for taking in Gif data from GIPHY
 type Gif struct {
 	Type               string `json:"type"`
 	Id                 string `json:"id"`
@@ -46,6 +49,7 @@ type Gif struct {
 	} `json:"images"`
 }
 
+// Struct for taking in pagination from GIPHY
 type paginatedResults struct {
 	Data       []*Gif `json:"data"`
 	Pagination struct {
@@ -53,15 +57,12 @@ type paginatedResults struct {
 	} `json:"pagination"`
 }
 
+// Struct for taking a single result from GIPHY
 type singleResult struct {
 	Data *Gif `json:"data"`
 }
 
-/*
-   CreateSlackClient sets up the slack RTM (real-timemessaging) client library,
-   initiating the socket connection and returning the client.
-   DO NOT EDIT THIS FUNCTION. This is a fully complete implementation.
-*/
+//  Creates the slack connection and the realtime manager
 func CreateSlackClient(apiKey string) *slack.RTM {
 	api := slack.New(apiKey)
 	rtm := api.NewRTM()
@@ -69,12 +70,7 @@ func CreateSlackClient(apiKey string) *slack.RTM {
 	return rtm
 }
 
-/*
-   RespondToEvents waits for messages on the Slack client's incomingEvents channel,
-   and sends a response when it detects the bot has been tagged in a message with @<botTag>.
-
-   EDIT THIS FUNCTION IN THE SPACE INDICATED ONLY!
-*/
+//  Checks all incoming events to determine whether to respond to them
 func RespondToEvents(slackClient *slack.RTM) {
 	for msg := range slackClient.IncomingEvents {
 		fmt.Println("Event Received: ", msg.Type)
@@ -85,26 +81,15 @@ func RespondToEvents(slackClient *slack.RTM) {
 				continue
 			}
 			message := strings.Replace(ev.Msg.Text, botTagString, "", -1)
-
-			// TODO: Make your bot do more than respond to a help command. See notes below.
-			// Make changes below this line and add additional funcs to support your bot's functionality.
-			// sendHelp is provided as a simple example. Your team may want to call a free external API
-			// in a function called sendResponse that you'd create below the definition of sendHelp,
-			// and call in this context to ensure execution when the bot receives an event.
-
-			// START SLACKBOT CUSTOM CODE
-			// ===============================================================
 			sendResponse(slackClient, message, ev.Channel)
 			sendHelp(slackClient, message, ev.Channel)
-			// ===============================================================
-			// END SLACKBOT CUSTOM CODE
 		default:
 
 		}
 	}
 }
 
-// sendHelp is a working help message, for reference.
+// Responds with a help message in slack
 func sendHelp(slackClient *slack.RTM, message, slackChannel string) {
 	if strings.ToLower(message) != "help" {
 		return
@@ -112,39 +97,24 @@ func sendHelp(slackClient *slack.RTM, message, slackChannel string) {
 	slackClient.SendMessage(slackClient.NewOutgoingMessage(helpMessage, slackChannel))
 }
 
-// sendResponse is NOT unimplemented --- write code in the function body to complete!
-
+// Sends a gif in slack according to user input
 func sendResponse(slackClient *slack.RTM, message, slackChannel string) {
-	specific := strings.Contains(message, "specific")
-	command := strings.ToLower(message)
+	specific := !strings.HasPrefix(message, "random")
+	message = strings.ToLower(message)
 	message = strings.ReplaceAll(message, " ", "%20")
 
 	if specific {
-		message = strings.TrimPrefix(message, "specific%20")
+		message = strings.TrimPrefix(message, "random%20")
 	}
-	println(message)
 
-	println("[RECEIVED] sendResponse:", command)
-
-	// START SLACKBOT CUSTOM CODE
-	// ===============================================================
-	// TODO:
-	//      1. Implement sendResponse for one or more of your custom Slackbot commands.
-	//         You could call an external API here, or create your own string response. Anything goes!
-	//      2. STRETCH: Write a goroutine that calls an external API based on the data received in this function.
-	// ===============================================================
-	// END SLACKBOT CUSTOM CODE\
-	url := fmt.Sprintf("http://api.giphy.com/v1/gifs/search?api_key=%s&q=%s&limit=10", os.Getenv("API_KEY"), message)
+	println("[RECEIVED] sendResponse:", message)
+	url := fmt.Sprintf("http://api.giphy.com/v1/gifs/search?api_key=%s&q=%s&limit=5", os.Getenv("API_KEY"), message)
 	req, err := http.NewRequest("GET", url, nil)
 
 	if err != nil {
 		log.Fatal("NewRequest: ", err)
 		return
 	}
-
-	// q := req.URL.Query()
-	// q.Add("api_key", "4AZiEXqeJDmw6I1tzPAWobx790tH98f4")
-	// q.Add("q", message)
 
 	client := &http.Client{}
 
@@ -161,10 +131,9 @@ func sendResponse(slackClient *slack.RTM, message, slackChannel string) {
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		log.Println(err)
 	}
-	println(data.Pagination.TotalCount)
 	if specific {
 		slackClient.SendMessage(slackClient.NewOutgoingMessage(data.Data[0].Images.FixedHeightDownsampled.URL, slackChannel))
 	} else {
-		slackClient.SendMessage(slackClient.NewOutgoingMessage(data.Data[rand.Intn(9)].Images.FixedHeightDownsampled.URL, slackChannel))
+		slackClient.SendMessage(slackClient.NewOutgoingMessage(data.Data[rand.Intn(4)].Images.FixedHeightDownsampled.URL, slackChannel))
 	}
 }
