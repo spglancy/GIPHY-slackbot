@@ -1,4 +1,4 @@
-// +heroku goVersion go1.11
+// +heroku goVersion go1.13
 
 module github.com/droxey/goslackit
 
