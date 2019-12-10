@@ -19,7 +19,7 @@ import (
 */
 const helpMessage = "type in '@BOT_NAME <command_arg_1> to get a random gif of that query, prefix your query with specific if you want the first result'"
 
-// Struct for taking in image data from GIPHY
+//ImageData struct for taking in image data from GIPHY
 type ImageData struct {
 	URL    string `json:"url"`
 	Width  string `json:"width"`
@@ -28,7 +28,7 @@ type ImageData struct {
 	Frames string `json:"frames"`
 }
 
-// Struct for taking in Gif data from GIPHY
+//Gif struct for taking in Gif data from GIPHY
 type Gif struct {
 	Type               string `json:"type"`
 	Id                 string `json:"id"`
@@ -49,7 +49,7 @@ type Gif struct {
 	} `json:"images"`
 }
 
-// Struct for taking in pagination from GIPHY
+//paginatedResults struct for taking in pagination from GIPHY
 type paginatedResults struct {
 	Data       []*Gif `json:"data"`
 	Pagination struct {
@@ -57,12 +57,12 @@ type paginatedResults struct {
 	} `json:"pagination"`
 }
 
-// Struct for taking a single result from GIPHY
+//singleResult struct for taking a single result from GIPHY
 type singleResult struct {
 	Data *Gif `json:"data"`
 }
 
-//  Creates the slack connection and the realtime manager
+//CreateSlackClient creates the slack connection and the realtime manager
 func CreateSlackClient(apiKey string) *slack.RTM {
 	api := slack.New(apiKey)
 	rtm := api.NewRTM()
@@ -70,7 +70,7 @@ func CreateSlackClient(apiKey string) *slack.RTM {
 	return rtm
 }
 
-//  Checks all incoming events to determine whether to respond to them
+//RespondToEvents checks all incoming events to determine whether to respond to them
 func RespondToEvents(slackClient *slack.RTM) {
 	for msg := range slackClient.IncomingEvents {
 		fmt.Println("Event Received: ", msg.Type)
@@ -89,7 +89,7 @@ func RespondToEvents(slackClient *slack.RTM) {
 	}
 }
 
-// Responds with a help message in slack
+//sendHelp responds with a help message in slack
 func sendHelp(slackClient *slack.RTM, message, slackChannel string) {
 	if strings.ToLower(message) != "help" {
 		return
@@ -97,7 +97,7 @@ func sendHelp(slackClient *slack.RTM, message, slackChannel string) {
 	slackClient.SendMessage(slackClient.NewOutgoingMessage(helpMessage, slackChannel))
 }
 
-// Sends a gif in slack according to user input
+//sendResponse sends a gif in slack according to user input
 func sendResponse(slackClient *slack.RTM, message, slackChannel string) {
 	specific := !strings.HasPrefix(message, "random")
 	message = strings.ToLower(message)
